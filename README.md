@@ -15,7 +15,7 @@
 
 ### Build `cycharm.exe`
 
-  1. Open the `CyCharm`
+  1. Open the [`CyCharm/src`](src)
   2. Build and run the `cycharm.exe`:
      `gcc -o cycharm.exe main.c main.h -mwindows -lcomdlg32 -lcomctl32`
 
