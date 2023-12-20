@@ -1,6 +1,6 @@
 # CyCharm
 
-**CyCharm** is a simple text editor created and developed by [Cyril John Magayaga](https://github.com/magayaga). It was available for Microsoft Windows.
+**CyCharm** is a GUI simple text editor created and developed by [Cyril John Magayaga](https://github.com/magayaga). It was available for Microsoft Windows.
 
 ## Build CyCharm
 
@@ -11,12 +11,13 @@
   * **Windows 11 SDK**
 
 **Pre-requisites**
-  * **Code editor** or **IDE**: Microsoft VSCode, JetBrains Fleet, Apache NetBeans, Microsoft Visual Studio, and more.
+  * **Code editor** or **IDE**: Neovim, GNU Emacs, Microsoft VSCode, JetBrains Fleet, Apache NetBeans, Microsoft Visual Studio, and more.
 
 ### Build `cycharm.exe`
 
   1. Open the [`CyCharm/src`](src)
   2. Build and run the `cycharm.exe`:
+
      `gcc -o cycharm.exe main.c main.h -mwindows -lcomdlg32 -lcomctl32`
 
 ## Copyright
