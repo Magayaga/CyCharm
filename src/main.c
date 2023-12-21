@@ -145,7 +145,7 @@ int WINAPI WinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, LPSTR lp_cmd
     SendMessage(g_hEdit, WM_SETFONT, (WPARAM)g_hFont, TRUE);
 
     // Create the status bar
-    g_hStatusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE, "Ready", g_hWnd, IDC_STATUSBAR);
+    g_hStatusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE, "Line: -, Column: -", g_hWnd, IDC_STATUSBAR);
 
     // Message loop
     MSG msg;
@@ -172,7 +172,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
             int newHeight = HIWORD(l_param);
 
             MoveWindow(g_hEdit, 0, 0, newWidth, newHeight - 20, TRUE); // Adjust height for the status bar
-            MoveWindow(GetDlgItem(hwnd, IDC_STATUSBAR), 0, newHeight - 20, newWidth, 20, TRUE); // Position the status bar
+            MoveWindow(GetDlgItem(hwnd, IDC_STATUSBAR), 0, newHeight - 20, newWidth, 20, TRUE);
         }
         break;
     
@@ -265,9 +265,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
             break;
 
         case 5: // Redo
-            if (SendMessage(g_hEdit, EM_CANREDO, 0, 0)) {
             SendMessage(g_hEdit, EM_REDO, 0, 0);
-            }
             break;
 
         case 6: // Cut
