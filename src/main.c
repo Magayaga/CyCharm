@@ -6,6 +6,7 @@
 // Global variables
 HWND g_hEdit;
 HWND g_hWnd; // Adding a global variable for the window handle
+HWND g_hStatusBar;
 HMENU hFileMenu; // Declare hFileMenu globally
 HMENU hEditMenu; // Declare hEditMenu globally
 HMENU hViewMenu;
@@ -19,8 +20,9 @@ OPENFILENAME ofn; // Structure for the open and save common dialogs
 // Global variable to track word wrap state
 BOOL g_bWordWrap = FALSE;
 
-// Initial zoom level is 100%
 int g_zoomLevel = 100;
+int g_currentLine = 1;
+int g_currentColumn = 1;
 
 void SetZoomLevel(int zoom);
 
@@ -142,6 +144,9 @@ int WINAPI WinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, LPSTR lp_cmd
     // Set the custom font to the edit control
     SendMessage(g_hEdit, WM_SETFONT, (WPARAM)g_hFont, TRUE);
 
+    // Create the status bar
+    g_hStatusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE, "Ready", g_hWnd, IDC_STATUSBAR);
+
     // Message loop
     MSG msg;
     while (GetMessage(&msg, NULL, 0, 0)) {
@@ -166,9 +171,31 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
             int newWidth = LOWORD(l_param);
             int newHeight = HIWORD(l_param);
 
-            MoveWindow(g_hEdit, 0, 0, newWidth, newHeight, TRUE);
+            MoveWindow(g_hEdit, 0, 0, newWidth, newHeight - 20, TRUE); // Adjust height for the status bar
+            MoveWindow(GetDlgItem(hwnd, IDC_STATUSBAR), 0, newHeight - 20, newWidth, 20, TRUE); // Position the status bar
         }
         break;
+    
+    case WM_SETFOCUS:
+        SendMessage(g_hEdit, EM_GETSEL, (WPARAM)&g_currentColumn, (LPARAM)&g_currentLine);
+        break;
+        
+    case WM_KILLFOCUS:
+        SendMessage(g_hStatusBar, SB_SETTEXT, 1, (LPARAM)""); // Clear line and column in status bar
+        break;
+    
+    case WM_CHAR:
+        // Shared code for WM_CHAR and WM_SETFOCUS
+        if (w_param == VK_RETURN || w_param == VK_BACK || (w_param >= 32 && w_param <= 126)) {
+            SendMessage(g_hEdit, EM_GETSEL, (WPARAM)&g_currentColumn, (LPARAM)&g_currentLine);
+        }
+        
+        // Display the current line and column in the status bar
+        char statusText[128];
+        snprintf(statusText, sizeof(statusText), "Line: %d, Column: %d", g_currentLine, g_currentColumn);
+        SendMessage(g_hStatusBar, SB_SETTEXT, 1, (LPARAM)statusText);
+        break;
+
     case WM_COMMAND:
         switch (LOWORD(w_param)) {
         case 1: // Open

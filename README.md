@@ -2,6 +2,9 @@
 
 **CyCharm** is a GUI simple text editor created and developed by [Cyril John Magayaga](https://github.com/magayaga). It was available for **Microsoft Windows** operating system.
 
+| Not to be confused with [**PyCharm**](https://www.jetbrains.com/pycharm/) by JetBrains
+| ---
+
 ## Build CyCharm
 
 **Individual components:**
@@ -11,7 +14,7 @@
   * **Windows 11 SDK**
 
 **Pre-requisites:**
-  * **Code editor** or **IDE**: Neovim, GNU Emacs, Microsoft VSCode, JetBrains Fleet, Apache NetBeans, JetBrains IntelliJ IDEA, and more.
+  * **Code editor** or **IDE**: Neovim, GNU Emacs, Microsoft VSCode, JetBrains Fleet, Apache NetBeans, JetBrains CLion, and more.
 
 ### Build `cycharm.exe`
 
