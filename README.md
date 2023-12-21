@@ -1,17 +1,17 @@
 # CyCharm
 
-**CyCharm** is a GUI simple text editor created and developed by [Cyril John Magayaga](https://github.com/magayaga). It was available for Microsoft Windows.
+**CyCharm** is a GUI simple text editor created and developed by [Cyril John Magayaga](https://github.com/magayaga). It was available for **Microsoft Windows** operating system.
 
 ## Build CyCharm
 
 **Individual components:**
 
-  * **Microsoft Visual Studio 2022**: MSVC v143 - VS 2022 C++ x64/x86 build tools (Latest)
+  * **Microsoft Visual Studio 2022**: MSVC `v143` - VS 2022 C++ x64/x86 build tools (Latest)
   * **GCC** GNU Compiler Collection: `v13` or later
   * **Windows 11 SDK**
 
-**Pre-requisites**
-  * **Code editor** or **IDE**: Neovim, GNU Emacs, Microsoft VSCode, JetBrains Fleet, Apache NetBeans, Microsoft Visual Studio, and more.
+**Pre-requisites:**
+  * **Code editor** or **IDE**: Neovim, GNU Emacs, Microsoft VSCode, JetBrains Fleet, Apache NetBeans, JetBrains IntelliJ IDEA, and more.
 
 ### Build `cycharm.exe`
 
