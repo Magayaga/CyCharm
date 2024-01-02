@@ -25,5 +25,5 @@
 
 ## Copyright
 
-Copyright (c) 2023 Cyril John Magayaga. All rights reserved.
+Copyright (c) 2023-2024 Cyril John Magayaga. All rights reserved.
 License under the [MIT](LICENSE) license.
