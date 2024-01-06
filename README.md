@@ -21,7 +21,7 @@
   1. Open the [`CyCharm/src`](src)
   2. Build and run the `cycharm.exe`:
 
-     `gcc -o cycharm.exe main.c main.h -mwindows -lcomdlg32 -lcomctl32`
+     `gcc -o cycharm.exe main.c main.h -mwindows -lcomdlg32 -lcomctl32` or `./make.bat`
 
 ## Copyright
 
