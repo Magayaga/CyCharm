@@ -1,5 +1,5 @@
 // CyCharm : Defines the entry point for the application.
-// Copyright 2023 Cyril John Magayaga
+// Copyright 2023-2024 Cyril John Magayaga
 
 # include "main.h"
 
@@ -90,6 +90,12 @@ int WINAPI WinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, LPSTR lp_cmd
     AppendMenu(hEditMenu, MF_STRING, 6, "Cut");
     AppendMenu(hEditMenu, MF_STRING, 7, "Copy");
     AppendMenu(hEditMenu, MF_STRING, 8, "Paste");
+
+    // Add a horizontal line (separator)
+    AppendMenu(hEditMenu, MF_SEPARATOR, 0, NULL);
+
+    AppendMenu(hEditMenu, MF_STRING, 14, "Find");
+    AppendMenu(hEditMenu, MF_STRING, 15, "Replace");
 
     // Add View menu items
     AppendMenu(hViewMenu, MF_STRING, 9, "Word Wrap");
@@ -314,6 +320,9 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
         break;
 
     case WM_DESTROY:
+        if (g_hFont != NULL) {
+            DeleteObject(g_hFont);
+        }
         PostQuitMessage(0);
         break;
 

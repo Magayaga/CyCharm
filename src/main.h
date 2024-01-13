@@ -1,4 +1,5 @@
 // CyCharm : include file for standard system include files, or project specific include files
+// Copyright 2023-2024 Cyril John Magayaga
 
 #include <windows.h>
 #include <richedit.h>
