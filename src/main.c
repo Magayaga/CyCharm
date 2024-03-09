@@ -1,6 +1,12 @@
 // CyCharm : Defines the entry point for the application.
 // Copyright 2023-2024 Cyril John Magayaga
 
+#include <windows.h>
+#include <richedit.h>
+#include <commdlg.h>
+#include <CommCtrl.h>
+#include <string.h>
+#include <stdio.h>
 # include "main.h"
 
 // Global variables
@@ -318,6 +324,27 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
             break;
         }
         break;
+    
+    case WM_KEYDOWN:
+        // Check for keyboard shortcuts
+        if (GetKeyState(VK_LWIN) & 0x8000) { // Windows logo key is pressed
+            if (w_param == VK_OEM_PLUS) { // Plus sign key
+                // Increase zoom level
+                g_zoomLevel += 10; // Increase zoom level by 10%
+                
+                if (g_zoomLevel > 500) g_zoomLevel = 500; // Limit maximum zoom level
+                SetZoomLevel(g_zoomLevel);
+            }
+            
+            else if (w_param == VK_OEM_MINUS) { // Minus sign key
+                // Decrease zoom level
+                g_zoomLevel -= 10; // Decrease zoom level by 10%
+                
+                if (g_zoomLevel < 10) g_zoomLevel = 10; // Limit minimum zoom level
+                SetZoomLevel(g_zoomLevel);
+            }
+        }
+        break;
 
     case WM_DESTROY:
         if (g_hFont != NULL) {
@@ -334,6 +361,10 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
 }
 
 void SetZoomLevel(int zoom) {
+    // Calculate the zoom factor
+    int numerator = zoom;
+    int denominator = 100; // Base zoom level
+
     // Set the zoom level using EM_SETZOOM
-    SendMessage(g_hEdit, EM_SETZOOM, zoom, 100);
+    SendMessage(g_hEdit, EM_SETZOOM, numerator, denominator);
 }
