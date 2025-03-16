@@ -1,5 +1,5 @@
 // CyCharm : Defines the entry point for the application.
-// Copyright 2023-2024 Cyril John Magayaga
+// Copyright 2023-2025 Cyril John Magayaga
 
 #include <windows.h>
 #include <richedit.h>
@@ -7,7 +7,12 @@
 #include <CommCtrl.h>
 #include <string.h>
 #include <stdio.h>
-# include "main.h"
+
+#define MAX_TEXT_LENGTH 10000
+#define MAX_HISTORY_SIZE 50
+
+#define IDC_STATUSBAR 1001
+#define IDC_EDIT 1002
 
 // Global variables
 HWND g_hEdit;
@@ -30,12 +35,47 @@ int g_zoomLevel = 100;
 int g_currentLine = 1;
 int g_currentColumn = 1;
 
+// Function to update the status bar with current cursor position
+void UpdateStatusBar() {
+    // Get the current position of the cursor
+    DWORD dwSelStart = 0, dwSelEnd = 0;
+    SendMessage(g_hEdit, EM_GETSEL, (WPARAM)&dwSelStart, (LPARAM)&dwSelEnd);
+
+    // Get the line number of the cursor
+    g_currentLine = (int)SendMessage(g_hEdit, EM_LINEFROMCHAR, (WPARAM)dwSelStart, 0);
+    
+    // Get the column number of the cursor
+    int lineStart = (int)SendMessage(g_hEdit, EM_LINEINDEX, g_currentLine, 0);
+    g_currentColumn = dwSelStart - lineStart + 1;
+
+    // Display the current line and column in the status bar
+    char statusText[128];
+    snprintf(statusText, sizeof(statusText), "Line: %d, Column: %d", g_currentLine + 1, g_currentColumn);
+    SendMessage(g_hStatusBar, SB_SETTEXT, 0, (LPARAM)statusText);
+}
+
 void SetZoomLevel(int zoom);
 
 // Function prototypes
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param);
+LRESULT CALLBACK EditProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param);
+
+// Original window procedure for the edit control
+WNDPROC g_OldEditProc;
 
 int WINAPI WinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, LPSTR lp_cmd_line, int n_cmd_show) {
+    // Initialize common controls
+    INITCOMMONCONTROLSEX icex;
+    icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
+    icex.dwICC = ICC_WIN95_CLASSES;
+    InitCommonControlsEx(&icex);
+
+    // Load the RichEdit library
+    HMODULE hRichEdit = LoadLibrary("RICHED32.DLL");
+    if (!hRichEdit) {
+        MessageBox(NULL, "RichEdit library not found!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        return 0;
+    }
 
     // Register the window class
     WNDCLASS window_class = { 0 };
@@ -68,9 +108,9 @@ int WINAPI WinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, LPSTR lp_cmd
     HMENU hMenu = CreateMenu();
     hFileMenu = CreateMenu(); // Initialize hFileMenu globally
     hEditMenu = CreateMenu(); // Initialize hEditMenu globally
-    HMENU hViewMenu = CreateMenu();
+    hViewMenu = CreateMenu(); // Initialize hViewMenu globally
     HMENU hZoomMenu = CreateMenu(); // Initialize hZoomMenu globally
-    HMENU hHelpMenu = CreateMenu();
+    hHelpMenu = CreateMenu();
 
     AppendMenu(hMenu, MF_POPUP, (UINT_PTR)hFileMenu, "File");
     AppendMenu(hMenu, MF_POPUP, (UINT_PTR)hEditMenu, "Edit"); // Add Edit menu
@@ -127,14 +167,21 @@ int WINAPI WinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, LPSTR lp_cmd
 
     SetMenu(g_hWnd, hMenu); // Set the menu to the window
 
-    // Create the edit control
-    g_hEdit = CreateWindow("EDIT", NULL, WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_HSCROLL | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
-        0, 0, 800, 600, g_hWnd, NULL, h_instance, NULL);
+    // Create the status bar
+    g_hStatusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE, "Line: 1, Column: 1", g_hWnd, IDC_STATUSBAR);
+
+    // Create the edit control (using RichEdit instead of EDIT)
+    g_hEdit = CreateWindowEx(0, RICHEDIT_CLASS, NULL, 
+        WS_CHILD | WS_VISIBLE | WS_VSCROLL | WS_HSCROLL | ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL,
+        0, 0, 800, 600, g_hWnd, (HMENU)IDC_EDIT, h_instance, NULL);
 
     if (g_hEdit == NULL) {
-        MessageBox(NULL, "Edit Control Creation Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
+        MessageBox(NULL, "RichEdit Control Creation Failed!", "Error", MB_ICONEXCLAMATION | MB_OK);
         return 0;
     }
+
+    // Subclass the edit control to handle messages
+    g_OldEditProc = (WNDPROC)SetWindowLongPtr(g_hEdit, GWLP_WNDPROC, (LONG_PTR)EditProc);
 
     // Show and update the window
     ShowWindow(g_hWnd, n_cmd_show);
@@ -156,8 +203,8 @@ int WINAPI WinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, LPSTR lp_cmd
     // Set the custom font to the edit control
     SendMessage(g_hEdit, WM_SETFONT, (WPARAM)g_hFont, TRUE);
 
-    // Create the status bar
-    g_hStatusBar = CreateStatusWindow(WS_CHILD | WS_VISIBLE, "Line: -, Column: -", g_hWnd, IDC_STATUSBAR);
+    // Initialize the status bar
+    UpdateStatusBar();
 
     // Message loop
     MSG msg;
@@ -171,41 +218,53 @@ int WINAPI WinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, LPSTR lp_cmd
         DeleteObject(g_hFont);
     }
 
+    // Free the RichEdit library
+    FreeLibrary(hRichEdit);
+
     return msg.wParam;
+}
+
+LRESULT CALLBACK EditProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param) {
+    switch (message) {
+        case WM_SETFOCUS:
+        case WM_KILLFOCUS:
+        case WM_CHAR:
+        case WM_KEYUP:
+        case WM_KEYDOWN:
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+        case WM_MOUSEMOVE:
+        case WM_MOUSEWHEEL:
+        case WM_VSCROLL:
+        case WM_HSCROLL:
+            // Update the status bar after handling the message
+            LRESULT result = CallWindowProc(g_OldEditProc, hwnd, message, w_param, l_param);
+            UpdateStatusBar();
+            return result;
+    }
+    
+    return CallWindowProc(g_OldEditProc, hwnd, message, w_param, l_param);
 }
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param) {
     switch (message) {
-
     case WM_SIZE:
         // Handle resizing of the window
         {
             int newWidth = LOWORD(l_param);
             int newHeight = HIWORD(l_param);
 
-            MoveWindow(g_hEdit, 0, 0, newWidth, newHeight - 20, TRUE); // Adjust height for the status bar
-            MoveWindow(GetDlgItem(hwnd, IDC_STATUSBAR), 0, newHeight - 20, newWidth, 20, TRUE);
+            // Resize status bar first
+            SendMessage(g_hStatusBar, WM_SIZE, 0, 0);
+            
+            // Get the height of the status bar
+            RECT statusRect;
+            GetWindowRect(g_hStatusBar, &statusRect);
+            int statusHeight = statusRect.bottom - statusRect.top;
+            
+            // Resize the edit control
+            MoveWindow(g_hEdit, 0, 0, newWidth, newHeight - statusHeight, TRUE);
         }
-        break;
-    
-    case WM_SETFOCUS:
-        SendMessage(g_hEdit, EM_GETSEL, (WPARAM)&g_currentColumn, (LPARAM)&g_currentLine);
-        break;
-        
-    case WM_KILLFOCUS:
-        SendMessage(g_hStatusBar, SB_SETTEXT, 1, (LPARAM)""); // Clear line and column in status bar
-        break;
-    
-    case WM_CHAR:
-        // Shared code for WM_CHAR and WM_SETFOCUS
-        if (w_param == VK_RETURN || w_param == VK_BACK || (w_param >= 32 && w_param <= 126)) {
-            SendMessage(g_hEdit, EM_GETSEL, (WPARAM)&g_currentColumn, (LPARAM)&g_currentLine);
-        }
-        
-        // Display the current line and column in the status bar
-        char statusText[128];
-        snprintf(statusText, sizeof(statusText), "Line: %d, Column: %d", g_currentLine, g_currentColumn);
-        SendMessage(g_hStatusBar, SB_SETTEXT, 1, (LPARAM)statusText);
         break;
 
     case WM_COMMAND:
@@ -230,6 +289,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
                     if (ReadFile(hFile, buffer, dwFileSize, NULL, NULL)) {
                         buffer[dwFileSize] = '\0';
                         SetWindowText(g_hEdit, buffer);
+                        // Update cursor position after loading file
+                        UpdateStatusBar();
                     }
 
                     free(buffer);
@@ -274,14 +335,17 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
 
         case 4: // Undo
             SendMessage(g_hEdit, EM_UNDO, 0, 0);
+            UpdateStatusBar(); // Update cursor position after undo
             break;
 
         case 5: // Redo
             SendMessage(g_hEdit, EM_REDO, 0, 0);
+            UpdateStatusBar(); // Update cursor position after redo
             break;
 
         case 6: // Cut
             SendMessage(g_hEdit, WM_CUT, 0, 0);
+            UpdateStatusBar(); // Update cursor position after cut
             break;
 
         case 7: // Copy
@@ -290,6 +354,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
 
         case 8: // Paste
             SendMessage(g_hEdit, WM_PASTE, 0, 0);
+            UpdateStatusBar(); // Update cursor position after paste
             break;
 
         case 9:
@@ -297,7 +362,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
             g_bWordWrap = !g_bWordWrap;
 
             // Enable or disable word wrap using EM_SETTARGETDEVICE
-            SendMessage(g_hEdit, EM_SETTARGETDEVICE, g_bWordWrap ? 1 : 0, 0);
+            SendMessage(g_hEdit, EM_SETTARGETDEVICE, 0, g_bWordWrap ? 0 : 1);
 
             // Update the menu item state
             CheckMenuItem(hViewMenu, 9, g_bWordWrap ? MF_CHECKED : MF_UNCHECKED);
@@ -316,30 +381,37 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
             break;
 
         case 12: // About
-            MessageBox(g_hWnd, "About CyCharm\nVersion 1.0-preview1\n\nDeveloped by Cyril John Magayaga", "About CyCharm", MB_OK | MB_ICONINFORMATION);
+            MessageBox(g_hWnd, "About CyCharm\nVersion 1.0-preview2\n\nDeveloped by Cyril John Magayaga", "About CyCharm", MB_OK | MB_ICONINFORMATION);
             break;
 
         case 13: // Select All
             SendMessage(g_hEdit, EM_SETSEL, 0, -1); // Select the entire content of the edit control
             break;
+            
+        case 14: // Find
+        case 15: // Replace
+            // These would typically open dialog boxes for find/replace functionality
+            // For now, just show a placeholder message
+            MessageBox(g_hWnd, "This feature is not yet implemented.", "Information", MB_OK | MB_ICONINFORMATION);
+            break;
         }
         break;
-    
+
     case WM_KEYDOWN:
         // Check for keyboard shortcuts
         if (GetKeyState(VK_LWIN) & 0x8000) { // Windows logo key is pressed
             if (w_param == VK_OEM_PLUS) { // Plus sign key
                 // Increase zoom level
                 g_zoomLevel += 10; // Increase zoom level by 10%
-                
+
                 if (g_zoomLevel > 500) g_zoomLevel = 500; // Limit maximum zoom level
                 SetZoomLevel(g_zoomLevel);
             }
-            
+
             else if (w_param == VK_OEM_MINUS) { // Minus sign key
                 // Decrease zoom level
                 g_zoomLevel -= 10; // Decrease zoom level by 10%
-                
+
                 if (g_zoomLevel < 10) g_zoomLevel = 10; // Limit minimum zoom level
                 SetZoomLevel(g_zoomLevel);
             }
