@@ -193,6 +193,9 @@ int WINAPI WinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, LPSTR lp_cmd
     ShowWindow(g_hWnd, n_cmd_show);
     UpdateWindow(g_hWnd);
 
+    // Set up auto-save timer (every 60 seconds)
+    SetTimer(g_hWnd, AUTOSAVE_TIMER_ID, 60000, NULL);
+
     // Create the custom font
     g_hFont = CreateFont(
         20, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
@@ -482,6 +485,29 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
             DeleteObject(g_hFont);
         }
         PostQuitMessage(0);
+        KillTimer(g_hWnd, AUTOSAVE_TIMER_ID);
+        break;
+    
+    case WM_TIMER:
+        if (w_param == AUTOSAVE_TIMER_ID && g_bAutoSave) {
+            // Perform auto save if there's content and Auto Save is enabled
+            if (GetWindowTextLength(g_hEdit) > 0) {
+                // If we have a file path already, save to it
+                if (ofn.lpstrFile != NULL && ofn.lpstrFile[0] != '\0') {
+                    HANDLE hFile = CreateFile(ofn.lpstrFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+                    if (hFile != INVALID_HANDLE_VALUE) {
+                        DWORD dwTextLength = GetWindowTextLength(g_hEdit);
+                        char* buffer = (char*)malloc(dwTextLength + 1);
+    
+                        GetWindowText(g_hEdit, buffer, dwTextLength + 1);
+                        WriteFile(hFile, buffer, dwTextLength, NULL, NULL);
+    
+                        free(buffer);
+                        CloseHandle(hFile);
+                    }
+                }
+            }
+        }
         break;
 
     default:
