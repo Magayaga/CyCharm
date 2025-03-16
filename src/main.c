@@ -7,12 +7,7 @@
 #include <CommCtrl.h>
 #include <string.h>
 #include <stdio.h>
-
-#define MAX_TEXT_LENGTH 10000
-#define MAX_HISTORY_SIZE 50
-
-#define IDC_STATUSBAR 1001
-#define IDC_EDIT 1002
+#include "main.h"
 
 // Global variables
 HWND g_hEdit;
@@ -30,6 +25,9 @@ OPENFILENAME ofn; // Structure for the open and save common dialogs
 
 // Global variable to track word wrap state
 BOOL g_bWordWrap = FALSE;
+
+// Global variable to track Auto Save state
+BOOL g_bAutoSave = FALSE;
 
 int g_zoomLevel = 100;
 int g_currentLine = 1;
@@ -118,12 +116,20 @@ int WINAPI WinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, LPSTR lp_cmd
     AppendMenu(hMenu, MF_POPUP, (UINT_PTR)hHelpMenu, "Help");
 
     // Add File menu items
-    AppendMenu(hFileMenu, MF_STRING, 1, "Open");
-    AppendMenu(hFileMenu, MF_STRING, 2, "Save");
-
+    AppendMenu(hFileMenu, MF_STRING, 16, "New File");
+    
     // Add a horizontal line (separator)
     AppendMenu(hFileMenu, MF_SEPARATOR, 0, NULL);
-
+    AppendMenu(hFileMenu, MF_STRING, 1, "Open");
+    AppendMenu(hFileMenu, MF_STRING, 2, "Save");
+    AppendMenu(hFileMenu, MF_STRING, 17, "Save As");
+    
+    // Add a horizontal line (separator)
+    AppendMenu(hFileMenu, MF_SEPARATOR, 0, NULL);
+    AppendMenu(hFileMenu, MF_STRING | MF_UNCHECKED, 18, "Auto Save");
+    
+    // Add a horizontal line (separator)
+    AppendMenu(hFileMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hFileMenu, MF_STRING, 3, "Exit");
 
     // Add Edit menu items
@@ -381,7 +387,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
             break;
 
         case 12: // About
-            MessageBox(g_hWnd, "About CyCharm\nVersion 1.0-preview2\n\nDeveloped by Cyril John Magayaga", "About CyCharm", MB_OK | MB_ICONINFORMATION);
+            MessageBox(g_hWnd, "About CyCharm\nVersion 1.0-preview3\n\nDeveloped by Cyril John Magayaga", "About CyCharm", MB_OK | MB_ICONINFORMATION);
             break;
 
         case 13: // Select All
@@ -393,6 +399,59 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
             // These would typically open dialog boxes for find/replace functionality
             // For now, just show a placeholder message
             MessageBox(g_hWnd, "This feature is not yet implemented.", "Information", MB_OK | MB_ICONINFORMATION);
+            break;
+        
+        case 16: // New File
+            // Confirm if the user wants to discard unsaved changes
+            if (GetWindowTextLength(g_hEdit) > 0) {
+                int response = MessageBox(g_hWnd, "Do you want to save changes?", "Confirmation", MB_YESNOCANCEL | MB_ICONQUESTION);
+                if (response == IDYES) {
+                    // Trigger Save functionality
+                    SendMessage(g_hWnd, WM_COMMAND, 2, 0);
+                } else if (response == IDCANCEL) {
+                    // User canceled the operation
+                    break;
+                }
+            }
+            // Clear the edit control
+            SetWindowText(g_hEdit, "");
+            UpdateStatusBar();
+            break;
+        
+        case 17: // Save As
+            ZeroMemory(&ofn, sizeof(ofn));
+            ofn.lStructSize = sizeof(ofn);
+            ofn.hwndOwner = g_hWnd;
+            ofn.lpstrFile = (LPSTR)malloc(MAX_PATH);
+            ofn.lpstrFile[0] = '\0';
+            ofn.nMaxFile = MAX_PATH;
+            ofn.lpstrFilter = "Text Files\0*.txt\0All Files\0*.*\0";
+            ofn.nFilterIndex = 1;
+            ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
+        
+            if (GetSaveFileName(&ofn)) {
+                HANDLE hFile = CreateFile(ofn.lpstrFile, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+                if (hFile != INVALID_HANDLE_VALUE) {
+                    DWORD dwTextLength = GetWindowTextLength(g_hEdit);
+                    char* buffer = (char*)malloc(dwTextLength + 1);
+        
+                    GetWindowText(g_hEdit, buffer, dwTextLength + 1);
+                    WriteFile(hFile, buffer, dwTextLength, NULL, NULL);
+        
+                    free(buffer);
+                    CloseHandle(hFile);
+                }
+            }
+        
+            free(ofn.lpstrFile);
+            break;
+        
+        case 18: // Auto Save
+            // Toggle Auto Save state
+            g_bAutoSave = !g_bAutoSave;
+            
+            // Update menu checkbox
+            CheckMenuItem(hFileMenu, 18, g_bAutoSave ? MF_CHECKED : MF_UNCHECKED);
             break;
         }
         break;
