@@ -7,6 +7,7 @@
 #include <CommCtrl.h>
 #include <string.h>
 #include <stdio.h>
+#include <shellapi.h>
 #include "main.h"
 
 // Global variables
@@ -169,6 +170,9 @@ int WINAPI WinMain(HINSTANCE h_instance, HINSTANCE h_prev_instance, LPSTR lp_cmd
     AppendMenu(hZoomMenu, MF_STRING, 11, "Zoom Out");
 
     // Add Help menu items
+    AppendMenu(hHelpMenu, MF_STRING, 19, "View License");
+    // Add a horizontal line (separator)
+    AppendMenu(hHelpMenu, MF_SEPARATOR, 0, NULL);
     AppendMenu(hHelpMenu, MF_STRING, 12, "About");
 
     SetMenu(g_hWnd, hMenu); // Set the menu to the window
@@ -455,6 +459,11 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
             
             // Update menu checkbox
             CheckMenuItem(hFileMenu, 18, g_bAutoSave ? MF_CHECKED : MF_UNCHECKED);
+            break;
+        
+        case 19: // View License
+            // Open the license URL in the default web browser
+            ShellExecute(NULL, "open", "https://github.com/Magayaga/CyCharm/blob/master/LICENSE", NULL, NULL, SW_SHOWNORMAL);
             break;
         }
         break;
