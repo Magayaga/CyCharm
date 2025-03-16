@@ -6,7 +6,7 @@ REM Set the name of the source file
 set SOURCE_FILE=main.c
 
 REM Compilation command
-gcc -o %OUTPUT_FILE% %SOURCE_FILE% -mwindows -lcomdlg32 -lcomctl32
+gcc -o %OUTPUT_FILE% %SOURCE_FILE% -mwindows -lcomdlg32 -lcomctl32 -lmsftedit
 
 REM Check if compilation was successful
 if %ERRORLEVEL% EQU 0 (
