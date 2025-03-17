@@ -34,7 +34,7 @@ int g_zoomLevel = 100;
 int g_currentLine = 1;
 int g_currentColumn = 1;
 
-// Function to update the status bar with current cursor position
+// Function to update the status bar with current cursor position and character count
 void UpdateStatusBar() {
     // Get the current position of the cursor
     DWORD dwSelStart = 0, dwSelEnd = 0;
@@ -46,10 +46,14 @@ void UpdateStatusBar() {
     // Get the column number of the cursor
     int lineStart = (int)SendMessage(g_hEdit, EM_LINEINDEX, g_currentLine, 0);
     g_currentColumn = dwSelStart - lineStart + 1;
+    
+    // Get total character count
+    int charCount = GetWindowTextLength(g_hEdit);
 
-    // Display the current line and column in the status bar
+    // Display the current line, column, and character count in the status bar
     char statusText[128];
-    snprintf(statusText, sizeof(statusText), "Line: %d, Column: %d", g_currentLine + 1, g_currentColumn);
+    snprintf(statusText, sizeof(statusText), "Line: %d, Column: %d | Character(s): %d", 
+             g_currentLine + 1, g_currentColumn, charCount);
     SendMessage(g_hStatusBar, SB_SETTEXT, 0, (LPARAM)statusText);
 }
 
@@ -394,7 +398,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM w_param, LPARAM l_param
             break;
 
         case 12: // About
-            MessageBox(g_hWnd, "About CyCharm\nVersion 1.0-preview3\n\nDeveloped by Cyril John Magayaga", "About CyCharm", MB_OK | MB_ICONINFORMATION);
+            MessageBox(g_hWnd, "About CyCharm\nVersion 1.0-preview4\n\nDeveloped by Cyril John Magayaga", "About CyCharm", MB_OK | MB_ICONINFORMATION);
             break;
 
         case 13: // Select All
