@@ -1,6 +1,6 @@
 # CyCharm
 
-**CyCharm** is a simple GUI text editor created and developed by [Cyril John Magayaga](https://github.com/magayaga). It was available for **Microsoft Windows** operating system, but not available for **Linux** and **macOS** operating systems.
+**CyCharm** is a simple GUI text editor created and developed by [Cyril John Magayaga](https://github.com/magayaga). It was available for **Microsoft Windows** operating system and not available for **Linux**, **macOS**, and **Unix-like** operating systems.
 
 | Not to be confused with [**PyCharm**](https://www.jetbrains.com/pycharm/) by JetBrains
 | ---
